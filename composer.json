@@ -1,0 +1,19 @@
+{
+    "name": "fozbek/scrawler",
+    "authors": [
+        {
+            "name": "Fatih Özbek",
+            "email": "mail@fatih.dev"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Scrawler\\": "src/"
+        }
+    },
+    "require": {
+        "symfony/dom-crawler": "^5.0",
+        "symfony/css-selector": "^5.0",
+        "guzzlehttp/guzzle": "~6.0"
+    }
+}

@@ -34,11 +34,11 @@ class Scrawler
 
     /**
      * @param string $urlOrHtml
-     * @param array $template
+     * @param array|string $template
      * @return array
      * @throws \Exception
      */
-    public function scrape(string $urlOrHtml, array $template): array
+    public function scrape(string $urlOrHtml, $template): array
     {
         $this->handleYaml($template);
 

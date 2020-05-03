@@ -6,11 +6,18 @@ use GuzzleHttp\Client;
 
 class RequestHelper
 {
-    private $client = null;
-    private $options = [];
+    /**
+     * @var Client
+     */
+    private $client;
+    /**
+     * @var array
+     */
+    private $options;
 
-    public function __construct($params)
+    public function __construct($params = [], Client $client = null)
     {
+        $this->client = $client;
         $this->options = $params;
     }
 
@@ -25,11 +32,16 @@ class RequestHelper
         }
     }
 
-    private function getClient()
+    /**
+     * @return Client
+     */
+    private function getClient(): Client
     {
-        if ($this->client == null) {
-            $this->client = new Client();
+        if ($this->client != null) {
+            return $this->client;
         }
+
+        $this->client = new Client();
 
         if (array_key_exists('client', $this->options)) {
             $this->client = $this->options['client'];

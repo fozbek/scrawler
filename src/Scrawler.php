@@ -2,6 +2,7 @@
 
 namespace Scrawler;
 
+use GuzzleHttp\Client;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Yaml\Yaml;
 
@@ -23,19 +24,21 @@ class Scrawler
     /**
      * Scrawler constructor.
      * @param array $options
+     * @param Client|null $client
      */
-    public function __construct($options = [])
+    public function __construct(?array $options = [], ?Client $client = null)
     {
+        $options['guzzle_client'] = $client;
         $this->options = array_merge_recursive($this->options, $options);
     }
 
     /**
      * @param string $urlOrHtml
-     * @param $template
+     * @param array $template
      * @return array
      * @throws \Exception
      */
-    public function scrape($urlOrHtml, $template)
+    public function scrape(string $urlOrHtml, array $template): array
     {
         $this->handleYaml($template);
 
@@ -46,9 +49,9 @@ class Scrawler
             return $this->handlePagination($urlOrHtml, $template, $pagination);
         }
 
-        $html = $this->getHtmlContent($urlOrHtml);
+        $htmlContent = $this->getHtmlContent($urlOrHtml);
 
-        return $this->loopTemplate($html, $template);
+        return $this->loopTemplate($htmlContent, $template);
     }
 
     /**
@@ -58,22 +61,27 @@ class Scrawler
      */
     private function getHtmlContent($urlOrHtml): string
     {
-        if (filter_var($urlOrHtml, FILTER_VALIDATE_URL)) {
-            $this->loadBaseUrl($urlOrHtml);
-            $this->loadHttpRequester();
-            $html = $this->requestHelper->GET($urlOrHtml);
-
-            if ($html === false) {
-                throw new \Exception('HTTP request Failed.');
-            }
-
-            return $html;
+        if (!filter_var($urlOrHtml, FILTER_VALIDATE_URL)) {
+            return $urlOrHtml;
         }
 
-        return $urlOrHtml;
+        $this->loadBaseUrl($urlOrHtml);
+        $this->loadHttpRequester();
+        $htmlContent = $this->requestHelper->GET($urlOrHtml);
+
+        if ($htmlContent === false) {
+            throw new \Exception('HTTP request Failed.');
+        }
+
+        return $htmlContent;
     }
 
-    public function makeValidUrl(string &$pathOrUrl)
+    /**
+     * @param string $pathOrUrl
+     * @return void
+     * @throws \Exception
+     */
+    public function makeValidUrl(string &$pathOrUrl): void
     {
         if (filter_var($pathOrUrl, FILTER_VALIDATE_URL)) {
             return;
@@ -83,17 +91,21 @@ class Scrawler
             throw new \Exception('Base url is empty');
         }
 
-        $pathOrUrl = $this->baseUrl . ltrim($pathOrUrl, '/'); // make a valid url
+        $pathOrUrl = $this->baseUrl . '/' . ltrim($pathOrUrl, '/'); // make a valid url
     }
 
-    public function loadBaseUrl($url)
+    /**
+     * @param string $url
+     * @return void
+     */
+    public function loadBaseUrl(string $url): void
     {
         $urlParts = parse_url($url);
         $host = $urlParts['host'];
         $scheme = $urlParts['scheme'];
 
         $url = sprintf('%s://%s', $scheme, $host);
-        $this->baseUrl = rtrim($url, '/') . '/';
+        $this->baseUrl = rtrim($url, '/');
     }
 
     private function handleSelector(string $html, string $selector, bool $isSingle = true)
@@ -133,17 +145,17 @@ class Scrawler
     }
 
     // todo this method should be simplified
-    private function loopTemplate($urlOrHtml, $template)
+    private function loopTemplate(string $htmlContent, array $template): array
     {
         $result = [];
 
         foreach ($template as $key => $depth) {
 
             if (is_string($depth)) {
-                $result[$key] = $this->handleSelector($urlOrHtml, $depth);
+                $result[$key] = $this->handleSelector($htmlContent, $depth);
             } else {
 
-                $urlOrList = $this->handleSelector($urlOrHtml, $depth['selector'], false);
+                $urlOrList = $this->handleSelector($htmlContent, $depth['selector'], false);
 
                 if (is_string($urlOrList)) {
                     $result[$key] = $this->scrape($urlOrList, $depth['content']);
@@ -164,20 +176,31 @@ class Scrawler
         return $result;
     }
 
-    private function loadHttpRequester()
+    /**
+     * @return void
+     */
+    private function loadHttpRequester(): void
     {
         if (!empty($this->requestHelper))
             return;
 
         $options = [];
-        if (!empty($this->options['guzzle_options'])) {
-            $options = $this->options['guzzle_options'];
-        }
+        $options ??= $this->options['guzzle_options'];
 
-        $this->requestHelper = new RequestHelper($options);
+        $client = null;
+        $client ??= $this->options['guzzle_client'];
+
+        $this->requestHelper = new RequestHelper($options, $client);
     }
 
-    private function handlePagination(string $urlOrHtml, $template, $pagination)
+    /**
+     * @param string $urlOrHtml
+     * @param array $template
+     * @param array $pagination
+     * @return array
+     * @throws \Exception
+     */
+    private function handlePagination(string $urlOrHtml, array $template, array $pagination): array
     {
         $currentPage = 1;
         $selector = $pagination['selector'];

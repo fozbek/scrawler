@@ -1,11 +1,16 @@
 # Scrawler
+
+### Description
 This tool is developed with Yaml in mind. Using yaml is highly recommended but of course you can store the template as json in your DB or filesystem, you can use array as well.
 
 Selectors almost the same with css selectors. There is only one different for now. Attributes can taken using @{attrName} format. Example: a@href, img@src
 
-## Examples
+### Installation
+    composer require fozbek/scrawler
 
-### Simple usage
+## Usage
+
+#### Simple usage
 Google Example
 ```php
 $url = 'https://google.com';
@@ -42,7 +47,7 @@ Response (Formatted)
         ]
     } 
     
-### Examples as Yaml
+#### Examples as Yaml
 >You can test all of these in any xenforo forum. Example url: https://xenforo.com/community/forums/announcements/
 
 - Scrape single selector
@@ -68,4 +73,25 @@ pagination:
   selector: .pageNav-jump--next@href 
 ```
 
+- New Request
+```yaml
+login-page:
+  selector: a.p-navgroup-link--logIn@href
+  content: 
+    title: title
+```
 
+- You can combine them :)
+```yaml
+title: title
+threads:
+  selector: .structItem--thread
+  content:
+    thread-detail:
+      selector: .structItem-title a@href
+      content: 
+        thread-content: .message-body .bbWrapper
+pagination:
+  limit: 3
+  selector: .pageNav-jump--next@href 
+```

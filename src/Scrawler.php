@@ -4,7 +4,6 @@ namespace Scrawler;
 
 use GuzzleHttp\Client;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\Component\Yaml\Yaml;
 
 class Scrawler
 {
@@ -40,8 +39,6 @@ class Scrawler
      */
     public function scrape(string $urlOrHtml, $template): array
     {
-        $this->handleYaml($template);
-
         if (array_key_exists('pagination', $template)) {
             $pagination = $template['pagination'];
             unset($template['pagination']);
@@ -222,18 +219,5 @@ class Scrawler
         } while (++$currentPage <= $maxPage && !empty($urlOrHtml));
 
         return $pages;
-    }
-
-    /**
-     * @param $template
-     * @return void
-     */
-    private function handleYaml(&$template): void
-    {
-        if (is_array($template)) {
-            return;
-        }
-
-        $template = Yaml::parse($template);
     }
 }

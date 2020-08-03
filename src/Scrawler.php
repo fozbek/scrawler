@@ -14,7 +14,7 @@ class Scrawler
     /**
      * @var string|null
      */
-    private $baseUrl = null;
+    private $endpoint = null;
     /**
      * @var RequestHelper
      */
@@ -22,7 +22,7 @@ class Scrawler
 
     /**
      * Scrawler constructor.
-     * @param array $options
+     * @param array|null $options
      * @param Client|null $client
      */
     public function __construct(?array $options = [], ?Client $client = null)
@@ -84,11 +84,11 @@ class Scrawler
             return;
         }
 
-        if (empty($this->baseUrl)) {
-            throw new \Exception('Base url is empty');
+        if (empty($this->endpoint)) {
+            throw new \Exception('Endpoint is empty');
         }
 
-        $pathOrUrl = $this->baseUrl . '/' . ltrim($pathOrUrl, '/'); // make a valid url
+        $pathOrUrl = sprintf("%s/%s", $this->endpoint, ltrim($pathOrUrl, '/')); // make a valid url
     }
 
     /**
@@ -101,8 +101,8 @@ class Scrawler
         $host = $urlParts['host'];
         $scheme = $urlParts['scheme'];
 
-        $url = sprintf('%s://%s', $scheme, $host);
-        $this->baseUrl = rtrim($url, '/');
+        $endpoint = sprintf('%s://%s', $scheme, $host);
+        $this->endpoint = rtrim($endpoint, '/');
     }
 
     private function handleSelector(string $html, string $selector, bool $isSingle = true)
@@ -182,10 +182,14 @@ class Scrawler
             return;
 
         $options = [];
-        $options ??= $this->options['guzzle_options'];
+        if (isset($this->options['guzzle_options'])) {
+            $options = $this->options['guzzle_options'];
+        }
 
         $client = null;
-        $client ??= $this->options['guzzle_client'];
+        if (isset($this->options['guzzle_client'])) {
+            $client = $this->options['guzzle_client'];
+        }
 
         $this->requestHelper = new RequestHelper($options, $client);
     }

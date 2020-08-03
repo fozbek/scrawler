@@ -23,6 +23,7 @@
     },
     "scripts": {
         "analyse": "vendor/bin/phpstan analyse -c phpstan.neon",
-        "test": "vendor/bin/phpunit tests"
+        "test": "vendor/bin/phpunit tests",
+        "coverage": "./vendor/bin/phpunit --coverage-html html"
     }
 }

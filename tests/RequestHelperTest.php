@@ -16,6 +16,10 @@ class RequestHelperTest extends TestCase
      * @var RequestHelper
      */
     private $helper;
+    /**
+     * @var RequestHelper
+     */
+    private $helperWithoutCustomClient;
 
     protected function setUp(): void
     {
@@ -28,6 +32,8 @@ class RequestHelperTest extends TestCase
         $handlerStack = HandlerStack::create($mock);
         $client = new Client(['handler' => $handlerStack]);
         $this->helper = new RequestHelper($client);
+
+        $this->helperWithoutCustomClient = new RequestHelper();
     }
 
     /**
@@ -42,6 +48,12 @@ class RequestHelperTest extends TestCase
         $this->assertEmpty($response);
 
         $response = $this->helper->GET('/');
+        $this->assertFalse($response);
+
+        $response = $this->helperWithoutCustomClient->GET('https://google.com/');
+        $this->assertNotEmpty($response);
+
+        $response = $this->helperWithoutCustomClient->GET('someWrongHostname');
         $this->assertFalse($response);
     }
 }

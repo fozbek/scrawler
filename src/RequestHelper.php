@@ -10,20 +10,14 @@ class RequestHelper
      * @var ?Client
      */
     private $client;
-    /**
-     * @var array<string, mixed>
-     */
-    private $options;
 
     /**
      * RequestHelper constructor.
-     * @param array<string, mixed> $params
      * @param ?Client $client
      */
-    public function __construct(array $params = [], ?Client $client = null)
+    public function __construct(?Client $client = null)
     {
         $this->client = $client;
-        $this->options = $params;
     }
 
     /**
@@ -34,7 +28,7 @@ class RequestHelper
     public function GET(string $url)
     {
         try {
-            $response = $this->getClient()->request('GET', $url, $this->options);
+            $response = $this->getClient()->request('GET', $url);
 
             return $response->getBody()->getContents();
         } catch (\Exception $e) {
@@ -47,15 +41,11 @@ class RequestHelper
      */
     private function getClient(): Client
     {
-        if ($this->client != null) {
+        if (!empty($this->client)) {
             return $this->client;
         }
 
         $this->client = new Client();
-
-        if (array_key_exists('client', $this->options)) {
-            $this->client = $this->options['client'];
-        }
 
         return $this->client;
     }

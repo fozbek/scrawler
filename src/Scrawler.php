@@ -28,7 +28,7 @@ class Scrawler
     public function __construct(?array $options = [], ?Client $client = null)
     {
         $options['guzzle_client'] = $client;
-        $this->options = array_merge_recursive($this->options, $options);
+        $this->options = $options;
     }
 
     /**
@@ -210,20 +210,11 @@ class Scrawler
      */
     private function loadHttpRequester(): void
     {
-        if (!empty($this->requestHelper))
+        if (!empty($this->requestHelper)) {
             return;
-
-        $options = [];
-        if (isset($this->options['guzzle_options'])) {
-            $options = $this->options['guzzle_options'];
         }
 
-        $client = null;
-        if (isset($this->options['guzzle_client'])) {
-            $client = $this->options['guzzle_client'];
-        }
-
-        $this->requestHelper = new RequestHelper($options, $client);
+        $this->requestHelper = new RequestHelper($this->options['guzzle_client']);
     }
 
     /**

@@ -6,7 +6,7 @@ $scrawler = new \Scrawler\Scrawler();
 
 $url = 'https://www.imdb.com/chart/top/';
 
-$template = [
+$schema = [
     'movies' => [
         'selector' => 'tbody.lister-list tr',
         'content' => [
@@ -17,7 +17,7 @@ $template = [
     ]
 ];
 
-$response = $scrawler->scrape($url, $template);
+$response = $scrawler->scrape($url, $schema);
 
 echo json_encode($response);
 

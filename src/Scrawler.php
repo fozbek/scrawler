@@ -33,22 +33,22 @@ class Scrawler
 
     /**
      * @param string $urlOrHtml
-     * @param array|string $template
+     * @param array|string $schema
      * @return array
      * @throws \Exception
      */
-    public function scrape(string $urlOrHtml, $template): array
+    public function scrape(string $urlOrHtml, $schema): array
     {
-        if (array_key_exists('pagination', $template)) {
-            $pagination = $template['pagination'];
-            unset($template['pagination']);
+        if (array_key_exists('pagination', $schema)) {
+            $pagination = $schema['pagination'];
+            unset($schema['pagination']);
 
-            return $this->handlePagination($urlOrHtml, $template, $pagination);
+            return $this->handlePagination($urlOrHtml, $schema, $pagination);
         }
 
         $htmlContent = $this->getHtmlContent($urlOrHtml);
 
-        return $this->loopTemplate($htmlContent, $template);
+        return $this->loopSchema($htmlContent, $schema);
     }
 
     /**
@@ -99,9 +99,9 @@ class Scrawler
     {
         $urlParts = parse_url($url);
         $host = $urlParts['host'];
-        $scheme = $urlParts['scheme'];
+        $schema = $urlParts['schema'];
 
-        $endpoint = sprintf('%s://%s', $scheme, $host);
+        $endpoint = sprintf('%s://%s', $schema, $host);
         $this->endpoint = rtrim($endpoint, '/');
     }
 
@@ -142,11 +142,11 @@ class Scrawler
     }
 
     // todo this method should be simplified
-    private function loopTemplate(string $htmlContent, array $template): array
+    private function loopSchema(string $htmlContent, array $schema): array
     {
         $result = [];
 
-        foreach ($template as $key => $depth) {
+        foreach ($schema as $key => $depth) {
 
             if (is_string($depth)) {
                 $result[$key] = $this->handleSelector($htmlContent, $depth);
@@ -196,12 +196,12 @@ class Scrawler
 
     /**
      * @param string $urlOrHtml
-     * @param array $template
+     * @param array $schema
      * @param array $pagination
      * @return array
      * @throws \Exception
      */
-    private function handlePagination(string $urlOrHtml, array $template, array $pagination): array
+    private function handlePagination(string $urlOrHtml, array $schema, array $pagination): array
     {
         $currentPage = 1;
         $selector = $pagination['selector'];
@@ -213,8 +213,8 @@ class Scrawler
         do {
             $urlKey = 'very_secret_page_url_key';
 
-            $template[$urlKey] = $selector;
-            $response = $this->scrape($urlOrHtml, $template);
+            $schema[$urlKey] = $selector;
+            $response = $this->scrape($urlOrHtml, $schema);
 
             $urlOrHtml = $response[$urlKey];
             unset($response[$urlKey]);

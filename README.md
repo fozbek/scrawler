@@ -1,7 +1,7 @@
 # Scrawler
 
 ### Description
-Simple, scheme base scraping tool
+Simple, schema base scraping tool
 
 ### Installation
     composer require fozbek/scrawler
@@ -13,7 +13,7 @@ Google Example
 ```php
 $url = 'https://google.com';
 
-$scheme = [
+$schema = [
     'title' => 'title',
     'a-tags' => [
         'selector' => 'a',
@@ -24,7 +24,7 @@ $scheme = [
     ],
 ];
 $scrawler = new \Scrawler\Scrawler();
-$response = $scrawler->scrape($url, $scheme);
+$response = $scrawler->scrape($url, $schema);
 
 echo json_encode($response);
 ```
@@ -51,14 +51,14 @@ Response (Formatted)
 
 - Scrape single selector
 ```php
-$scheme = [
+$Schema = [
     'forum-title' => '.p-body-header .p-title-value' 
 ];
 ``` 
 
 - Loop selector
 ```php
-$scheme = [
+$Schema = [
     'threads' => [
         'selector' => '.structItem--thread',
         'content' => [
@@ -72,7 +72,7 @@ $scheme = [
 
 - Pagination
 ```php
-$scheme = [
+$Schema = [
     'title' => 'title',
     'pagination' => [
         'limit' => 3,
@@ -83,7 +83,7 @@ $scheme = [
 
 - New Request
 ```php
-$scheme = [
+$Schema = [
     'login-page' => [
         'selector' => 'a.p-navgroup-link--logIn@href',
         'content' => [
@@ -95,7 +95,7 @@ $scheme = [
 
 - You can combine them :)
 ```php
-$scheme = [
+$Schema = [
     'title' => 'title',
     'threads' => [
         'selector' => '.structItem--thread',

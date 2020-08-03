@@ -7,21 +7,31 @@ use GuzzleHttp\Client;
 class RequestHelper
 {
     /**
-     * @var Client
+     * @var ?Client
      */
     private $client;
     /**
-     * @var array
+     * @var array<string, mixed>
      */
     private $options;
 
-    public function __construct($params = [], Client $client = null)
+    /**
+     * RequestHelper constructor.
+     * @param array<string, mixed> $params
+     * @param ?Client $client
+     */
+    public function __construct(array $params = [], ?Client $client = null)
     {
         $this->client = $client;
         $this->options = $params;
     }
 
-    public function GET($url)
+    /**
+     * @param string $url
+     * @return false|string
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function GET(string $url)
     {
         try {
             $response = $this->getClient()->request('GET', $url, $this->options);

@@ -8,7 +8,7 @@ use Symfony\Component\DomCrawler\Crawler;
 class Scrawler
 {
     /**
-     * @var array
+     * @var array<string, mixed>
      */
     private $options = [];
     /**
@@ -22,7 +22,7 @@ class Scrawler
 
     /**
      * Scrawler constructor.
-     * @param array|null $options
+     * @param array<string, mixed>|null $options
      * @param Client|null $client
      */
     public function __construct(?array $options = [], ?Client $client = null)
@@ -33,8 +33,8 @@ class Scrawler
 
     /**
      * @param string $urlOrHtml
-     * @param array|string $schema
-     * @return array
+     * @param array<mixed> $schema
+     * @return array<mixed>
      * @throws \Exception
      */
     public function scrape(string $urlOrHtml, $schema): array
@@ -52,11 +52,11 @@ class Scrawler
     }
 
     /**
-     * @param $urlOrHtml
+     * @param string $urlOrHtml
      * @return string
      * @throws \Exception
      */
-    private function getHtmlContent($urlOrHtml): string
+    private function getHtmlContent(string $urlOrHtml): string
     {
         if (!filter_var($urlOrHtml, FILTER_VALIDATE_URL)) {
             return $urlOrHtml;
@@ -98,13 +98,32 @@ class Scrawler
     public function loadBaseUrl(string $url): void
     {
         $urlParts = parse_url($url);
-        $host = $urlParts['host'];
-        $schema = $urlParts['schema'];
+        if (!is_array($urlParts)) {
+            throw new \Exception('Url could not split');
+        }
 
-        $endpoint = sprintf('%s://%s', $schema, $host);
+        if (array_key_exists('host', $urlParts)) {
+            $host = $urlParts['host'];
+        }
+        if (array_key_exists('scheme', $urlParts)) {
+            $scheme = $urlParts['scheme'];
+        }
+
+        if (!isset($host) || !isset($scheme)) {
+            throw new \RuntimeException('Hostname or scheme is not exists! Url is not valid');
+        }
+
+        $endpoint = sprintf('%s://%s', $scheme, $host);
         $this->endpoint = rtrim($endpoint, '/');
     }
 
+    /**
+     * @param string $html
+     * @param string $selector
+     * @param bool $isSingle
+     * @return array<null>|object|string|Crawler|null
+     * @throws \Exception
+     */
     private function handleSelector(string $html, string $selector, bool $isSingle = true)
     {
         $crawler = new Crawler($html);
@@ -132,6 +151,10 @@ class Scrawler
         return $domObject;
     }
 
+    /**
+     * @param string $selector
+     * @return array<mixed, mixed>
+     */
     private function normalizeSelector(string $selector)
     {
         if (strpos($selector, '@') !== false) {
@@ -142,6 +165,13 @@ class Scrawler
     }
 
     // todo this method should be simplified
+
+    /**
+     * @param string $htmlContent
+     * @param array<mixed> $schema
+     * @return array<string, mixed>
+     * @throws \Exception
+     */
     private function loopSchema(string $htmlContent, array $schema): array
     {
         $result = [];
@@ -156,14 +186,16 @@ class Scrawler
 
                 if (is_string($urlOrList)) {
                     $result[$key] = $this->scrape($urlOrList, $depth['content']);
-                } else { // list selector
-                    if (empty($urlOrList)) {
-                        $result[$key] = [];
-                    } else {
-                        foreach ($urlOrList as $listSelectorKey => $item) {
-                            $itemContent = $item->ownerDocument->saveHTML($item);
-                            $result[$key][$listSelectorKey] = $this->scrape($itemContent, $depth['content']);
-                        }
+
+                    continue;
+                }
+
+                if (empty($urlOrList)) {
+                    $result[$key] = [];
+                } elseif (is_iterable($urlOrList)) {
+                    foreach ($urlOrList as $listSelectorKey => $item) {
+                        $itemContent = $item->ownerDocument->saveHTML($item);
+                        $result[$key][$listSelectorKey] = $this->scrape($itemContent, $depth['content']);
                     }
                 }
 
@@ -196,9 +228,9 @@ class Scrawler
 
     /**
      * @param string $urlOrHtml
-     * @param array $schema
-     * @param array $pagination
-     * @return array
+     * @param array<mixed> $schema
+     * @param array<string, mixed> $pagination
+     * @return array<int, mixed>
      * @throws \Exception
      */
     private function handlePagination(string $urlOrHtml, array $schema, array $pagination): array

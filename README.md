@@ -1,9 +1,7 @@
 # Scrawler
 
 ### Description
-This tool is developed with Yaml in mind. Using yaml is highly recommended but of course you can store the template as json in your DB or filesystem, you can use array as well.
-
-Selectors almost the same with css selectors. There is only one different for now. Attributes can taken using @{attrName} format. Example: a@href, img@src
+Simple, scheme base scraping tool
 
 ### Installation
     composer require fozbek/scrawler
@@ -15,17 +13,18 @@ Google Example
 ```php
 $url = 'https://google.com';
 
-$template = '
-title: title
-a-tags:
-  selector: a
-  content:
-    text: a
-    url: a@href
-';
-
+$scheme = [
+    'title' => 'title',
+    'a-tags' => [
+        'selector' => 'a',
+        'content' => [
+            'text' => 'a',
+            'url' => 'a@href',
+        ],
+    ],
+];
 $scrawler = new \Scrawler\Scrawler();
-$response = $scrawler->scrape($url, $template);
+$response = $scrawler->scrape($url, $scheme);
 
 echo json_encode($response);
 ```
@@ -51,47 +50,67 @@ Response (Formatted)
 >You can test all of these in any xenforo forum. Example url: https://xenforo.com/community/forums/announcements/
 
 - Scrape single selector
-```yaml
-forum-title: .p-body-header .p-title-value 
+```php
+$scheme = [
+    'forum-title' => '.p-body-header .p-title-value' 
+];
 ``` 
 
 - Loop selector
-```yaml
-threads:
-  selector: .structItem--thread
-  content:
-    thread-title: .structItem-title
-    thread-url: .structItem-title a@href
-    last-update-date: .structItem-latestDate
+```php
+$scheme = [
+    'threads' => [
+        'selector' => '.structItem--thread',
+        'content' => [
+            'thread-title' => '.structItem-title',
+            'thread-url' => '.structItem-title a@href',
+            'last-update-date' => '.structItem-latestDate',
+        ]
+    ]
+];
 ``` 
 
 - Pagination
-```yaml
-title: title
-pagination:
-  limit: 3
-  selector: .pageNav-jump--next@href 
+```php
+$scheme = [
+    'title' => 'title',
+    'pagination' => [
+        'limit' => 3,
+        'selector' => '.pageNav-jump--next@href',
+    ],
+];
 ```
 
 - New Request
-```yaml
-login-page:
-  selector: a.p-navgroup-link--logIn@href
-  content: 
-    title: title
+```php
+$scheme = [
+    'login-page' => [
+        'selector' => 'a.p-navgroup-link--logIn@href',
+        'content' => [
+            'title' => 'title',
+        ],
+    ],
+];
 ```
 
 - You can combine them :)
-```yaml
-title: title
-threads:
-  selector: .structItem--thread
-  content:
-    thread-detail:
-      selector: .structItem-title a@href
-      content: 
-        thread-content: .message-body .bbWrapper
-pagination:
-  limit: 3
-  selector: .pageNav-jump--next@href 
+```php
+$scheme = [
+    'title' => 'title',
+    'threads' => [
+        'selector' => '.structItem--thread',
+        'content' => [
+            'thread-detail' => [
+                'selector' => '.structItem-title a@href',
+                'content' => [
+                    'thread-content' => '.message-body .bbWrapper',
+                ],
+            ],
+        ],
+    ],
+    'pagination' => [
+        'limit' => 3,
+        'selector' => '.pageNav-jump--next@href',
+    ],
+];
 ```

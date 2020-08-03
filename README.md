@@ -51,14 +51,14 @@ Response (Formatted)
 
 - Scrape single selector
 ```php
-$Schema = [
+$schema = [
     'forum-title' => '.p-body-header .p-title-value' 
 ];
 ``` 
 
 - Loop selector
 ```php
-$Schema = [
+$schema = [
     'threads' => [
         'selector' => '.structItem--thread',
         'content' => [
@@ -72,7 +72,7 @@ $Schema = [
 
 - Pagination
 ```php
-$Schema = [
+$schema = [
     'title' => 'title',
     'pagination' => [
         'limit' => 3,
@@ -83,7 +83,7 @@ $Schema = [
 
 - New Request
 ```php
-$Schema = [
+$schema = [
     'login-page' => [
         'selector' => 'a.p-navgroup-link--logIn@href',
         'content' => [
@@ -95,7 +95,7 @@ $Schema = [
 
 - You can combine them :)
 ```php
-$Schema = [
+$schema = [
     'title' => 'title',
     'threads' => [
         'selector' => '.structItem--thread',

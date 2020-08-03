@@ -46,7 +46,7 @@ Response (Formatted)
         ]
     } 
     
-#### Examples as Yaml
+#### Examples
 >You can test all of these in any xenforo forum. Example url: https://xenforo.com/community/forums/announcements/
 
 - Scrape single selector

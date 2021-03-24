@@ -1,7 +1,7 @@
 # Scrawler
 
 ### Description
-Simple, schema base scraping tool
+Simple, schema based scraping tool
 
 ### Installation
     composer require fozbek/scrawler

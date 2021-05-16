@@ -15,7 +15,7 @@
     "require": {
         "symfony/dom-crawler": "^5.0",
         "symfony/css-selector": "^5.0",
-        "guzzlehttp/guzzle": "~6.0"
+        "guzzlehttp/guzzle": "~6.0|^7.0.1"
     },
     "require-dev": {
         "phpstan/phpstan": "^0.12.34",

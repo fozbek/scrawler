@@ -1,14 +1,16 @@
 <?php
 
+use Scrawler\Scrawler;
+
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
-$scrawler = new \Scrawler\Scrawler();
+$scrawler = new Scrawler();
 
 $url = 'https://news.ycombinator.com/';
 
 $schema = [
     'threads' => [
-        'selector' => 'tr.athing',
+        'list-selector' => 'tr.athing',
         'content' => [
             'title' => '.storylink',
             'link' => '.storylink@href',

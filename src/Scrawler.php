@@ -2,203 +2,84 @@
 
 namespace Scrawler;
 
+use Exception;
 use GuzzleHttp\Client;
-use Symfony\Component\DomCrawler\Crawler;
+use GuzzleHttp\Exception\GuzzleException;
+use Scrawler\Model\ScrawlerDocument;
+use Scrawler\Model\ScrawlerOptions;
 
 class Scrawler
 {
-    /**
-     * @var array<string, mixed>
-     */
-    private $options = [];
-    /**
-     * @var string|null
-     */
-    private $endpoint = null;
-    /**
-     * @var RequestHelper
-     */
-    private $requestHelper = null;
+    private ?ScrawlerOptions $options;
 
     /**
      * Scrawler constructor.
-     * @param array<string, mixed>|null $options
-     * @param Client|null $client
+     * @param ?ScrawlerOptions $options
      */
-    public function __construct(?array $options = [], ?Client $client = null)
+    public function __construct(?ScrawlerOptions $options = null)
     {
-        $options['guzzle_client'] = $client;
+        if (!$options instanceof ScrawlerOptions) {
+            $options = new ScrawlerOptions();
+        }
+
         $this->options = $options;
     }
 
     /**
      * @param string $urlOrHtml
      * @param array<mixed> $schema
+     * @param bool $isHtml
      * @return array<mixed>
-     * @throws \Exception
+     * @throws GuzzleException
      */
-    public function scrape(string $urlOrHtml, $schema): array
+    public function scrape(string $urlOrHtml, array $schema, bool $isHtml = false): array
     {
-        if (array_key_exists('pagination', $schema)) {
-            $pagination = $schema['pagination'];
-            unset($schema['pagination']);
-
-            return $this->handlePagination($urlOrHtml, $schema, $pagination);
+        if ($isHtml === false) {
+            $urlOrHtml = $this->getHtmlContentFromUrl($urlOrHtml);
         }
 
-        $htmlContent = $this->getHtmlContent($urlOrHtml);
-
-        return $this->loopSchema($htmlContent, $schema);
+        return $this->loopSchema($urlOrHtml, $schema);
     }
-
-    /**
-     * @param string $urlOrHtml
-     * @return string
-     * @throws \Exception
-     */
-    private function getHtmlContent(string $urlOrHtml): string
-    {
-        if (!filter_var($urlOrHtml, FILTER_VALIDATE_URL)) {
-            return $urlOrHtml;
-        }
-
-        $this->loadBaseUrl($urlOrHtml);
-        $this->loadHttpRequester();
-        $htmlContent = $this->requestHelper->GET($urlOrHtml);
-
-        if ($htmlContent === false) {
-            throw new \Exception('HTTP request Failed.');
-        }
-
-        return $htmlContent;
-    }
-
-    /**
-     * @param string $pathOrUrl
-     * @return void
-     * @throws \Exception
-     */
-    public function makeValidUrl(string &$pathOrUrl): void
-    {
-        if (filter_var($pathOrUrl, FILTER_VALIDATE_URL)) {
-            return;
-        }
-
-        if (empty($this->endpoint)) {
-            throw new \Exception('Endpoint is empty');
-        }
-
-        $pathOrUrl = sprintf("%s/%s", $this->endpoint, ltrim($pathOrUrl, '/')); // make a valid url
-    }
-
-    /**
-     * @param string $url
-     * @return void
-     */
-    public function loadBaseUrl(string $url): void
-    {
-        $urlParts = parse_url($url);
-        if (!is_array($urlParts)) {
-            throw new \Exception('Url could not split');
-        }
-
-        if (array_key_exists('host', $urlParts)) {
-            $host = $urlParts['host'];
-        }
-        if (array_key_exists('scheme', $urlParts)) {
-            $scheme = $urlParts['scheme'];
-        }
-
-        if (!isset($host) || !isset($scheme)) {
-            throw new \RuntimeException('Hostname or scheme is not exists! Url is not valid');
-        }
-
-        $endpoint = sprintf('%s://%s', $scheme, $host);
-        $this->endpoint = rtrim($endpoint, '/');
-    }
-
-    /**
-     * @param string $html
-     * @param string $selector
-     * @param bool $isSingle
-     * @return array<null>|object|string|Crawler|null
-     * @throws \Exception
-     */
-    private function handleSelector(string $html, string $selector, bool $isSingle = true)
-    {
-        $crawler = new Crawler($html);
-        [$selector, $attributeName] = $this->normalizeSelector($selector);
-        $domObject = $crawler->filter($selector);
-
-        if ($domObject->count() < 1) {
-            return $isSingle ? null : [];
-        }
-
-        if (!empty($attributeName)) {
-            $attributeValue = $domObject->first()->attr($attributeName);
-
-            if (in_array($attributeName, ['href', 'src'])) {
-                $this->makeValidUrl($attributeValue);
-            }
-
-            return $attributeValue;
-        }
-
-        if ($isSingle) {
-            return $domObject->first()->text();
-        }
-
-        return $domObject;
-    }
-
-    /**
-     * @param string $selector
-     * @return array<mixed, mixed>
-     */
-    private function normalizeSelector(string $selector)
-    {
-        if (strpos($selector, '@') !== false) {
-            return explode('@', $selector);
-        }
-
-        return [$selector, null];
-    }
-
-    // todo this method should be simplified
 
     /**
      * @param string $htmlContent
      * @param array<mixed> $schema
      * @return array<string, mixed>
-     * @throws \Exception
+     * @throws Exception|GuzzleException
      */
     private function loopSchema(string $htmlContent, array $schema): array
     {
         $result = [];
 
         foreach ($schema as $key => $depth) {
+            $depthModel = new ScrawlerDocument($htmlContent);
+            $depth = ScrawlerDocument::normalizeDepth($depth);
 
-            if (is_string($depth)) {
-                $result[$key] = $this->handleSelector($htmlContent, $depth);
+            if ($depth['selector']) { // handle single
+                $result[$key] = $depthModel->handleSingleSelector($depth);
+
+            } elseif ($depth['request-selector']) {
+
+                $url = $depthModel->handleSingleSelector($depth['request-selector']);
+
+                if ($depth['base-url']) {
+                    $url = $this->makeValidUrl($url, $depth['base-url']);
+                }
+
+                $result[$key] = $this->scrape($url, $depth['content']);
+
             } else {
+                $elements = $depthModel->find($depth['list-selector']);
 
-                $urlOrList = $this->handleSelector($htmlContent, $depth['selector'], false);
-
-                if (is_string($urlOrList)) {
-                    $result[$key] = $this->scrape($urlOrList, $depth['content']);
+                if ($depth['content'] === false) {
+                    $result[$key][] = array_map(static fn($element) => ScrawlerDocument::manipulateExistingDom($element, $depth), $elements);
 
                     continue;
                 }
 
-                if (empty($urlOrList)) {
-                    $result[$key] = [];
-                } elseif (is_iterable($urlOrList)) {
-                    foreach ($urlOrList as $listSelectorKey => $item) {
-                        $itemContent = $item->ownerDocument->saveHTML($item);
-                        $result[$key][$listSelectorKey] = $this->scrape($itemContent, $depth['content']);
-                    }
+                foreach ($elements as $element) {
+                    $result[$key][] = $this->loopSchema($element->html(), $depth['content']);
                 }
-
             }
         }
 
@@ -206,45 +87,42 @@ class Scrawler
     }
 
     /**
-     * @return void
+     * @param string $url
+     * @return string
+     * @throws Exception|GuzzleException
      */
-    private function loadHttpRequester(): void
+    private function getHtmlContentFromUrl(string $url): string
     {
-        if (!empty($this->requestHelper)) {
-            return;
-        }
-
-        $this->requestHelper = new RequestHelper($this->options['guzzle_client']);
+        return $this->getHttpRequester()->GET($url);
     }
 
     /**
-     * @param string $urlOrHtml
-     * @param array<mixed> $schema
-     * @param array<string, mixed> $pagination
-     * @return array<int, mixed>
-     * @throws \Exception
+     * @return RequestHelper
      */
-    private function handlePagination(string $urlOrHtml, array $schema, array $pagination): array
+    private function getHttpRequester(): RequestHelper
     {
-        $currentPage = 1;
-        $selector = $pagination['selector'];
-        $maxPage = $pagination['limit'];
-        $pages = [];
+        if (empty($this->requestHelper)) {
+            if (!$this->options->getGuzzleClient()) {
+                $this->options->setGuzzleClient(new Client());
+            }
 
-        // todo this method should be simplified
+            $this->requestHelper = new RequestHelper($this->options->getGuzzleClient());
+        }
 
-        do {
-            $urlKey = 'very_secret_page_url_key';
+        return $this->requestHelper;
+    }
 
-            $schema[$urlKey] = $selector;
-            $response = $this->scrape($urlOrHtml, $schema);
+    /**
+     * @param string $pathOrUrl
+     * @param string $baseUrl
+     * @return string
+     */
+    public function makeValidUrl(string $pathOrUrl, string $baseUrl): string
+    {
+        if ($baseUrl) {
+            return sprintf("%s/%s", rtrim($baseUrl, '/'), ltrim($pathOrUrl, '/')); // make a valid url
+        }
 
-            $urlOrHtml = $response[$urlKey];
-            unset($response[$urlKey]);
-            $pages[$currentPage] = $response;
-
-        } while (++$currentPage <= $maxPage && !empty($urlOrHtml));
-
-        return $pages;
+        return $pathOrUrl;
     }
 }

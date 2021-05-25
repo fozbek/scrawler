@@ -3,6 +3,8 @@
 namespace Scrawler;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -15,11 +17,11 @@ class RequestHelperTest extends TestCase
     /**
      * @var RequestHelper
      */
-    private $helper;
+    private RequestHelper $helper;
     /**
      * @var RequestHelper
      */
-    private $helperWithoutCustomClient;
+    private RequestHelper $helperWithoutCustomClient;
 
     protected function setUp(): void
     {
@@ -33,27 +35,27 @@ class RequestHelperTest extends TestCase
         $client = new Client(['handler' => $handlerStack]);
         $this->helper = new RequestHelper($client);
 
-        $this->helperWithoutCustomClient = new RequestHelper();
+        $this->helperWithoutCustomClient = new RequestHelper(new Client());
     }
 
     /**
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
     public function testGET(): void
     {
         $response = $this->helper->GET('/');
-        $this->assertEquals('Hello, World', $response);
+        self::assertEquals('Hello, World', $response);
 
         $response = $this->helper->GET('/');
-        $this->assertEmpty($response);
+        self::assertEmpty($response);
 
-        $response = $this->helper->GET('/');
-        $this->assertFalse($response);
+        $this->expectException(RequestException::class);
+        $this->helper->GET('/');
 
         $response = $this->helperWithoutCustomClient->GET('https://google.com/');
-        $this->assertNotEmpty($response);
+        self::assertNotEmpty($response);
 
-        $response = $this->helperWithoutCustomClient->GET('someWrongHostname');
-        $this->assertFalse($response);
+        $this->expectException(ConnectException::class);
+        $this->helperWithoutCustomClient->GET('someWrongHostname');
     }
 }

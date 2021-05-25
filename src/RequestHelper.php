@@ -2,37 +2,40 @@
 
 namespace Scrawler;
 
+use Exception;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 
 class RequestHelper
 {
     /**
-     * @var ?Client
+     * @var Client
      */
-    private $client;
+    private Client $client;
 
     /**
      * RequestHelper constructor.
-     * @param ?Client $client
+     * @param Client $client
      */
-    public function __construct(?Client $client = null)
+    public function __construct(Client $client)
     {
         $this->client = $client;
     }
 
     /**
      * @param string $url
-     * @return false|string
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @return string
+     * @throws GuzzleException
+     * @throws Exception
      */
-    public function GET(string $url)
+    public function GET(string $url): string
     {
         try {
             $response = $this->getClient()->request('GET', $url);
 
             return $response->getBody()->getContents();
-        } catch (\Exception $e) {
-            return false;
+        } catch (Exception $e) {
+            throw $e;
         }
     }
 
@@ -41,12 +44,6 @@ class RequestHelper
      */
     private function getClient(): Client
     {
-        if (!empty($this->client)) {
-            return $this->client;
-        }
-
-        $this->client = new Client();
-
         return $this->client;
     }
 }

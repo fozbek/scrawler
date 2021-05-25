@@ -7,17 +7,19 @@
             "email": "mail@fatih.dev"
         }
     ],
+    "description": "Simple, schema based scraping tool",
     "autoload": {
         "psr-4": {
             "Scrawler\\": "src/"
         }
     },
     "require": {
-        "symfony/dom-crawler": "^5.0",
-        "symfony/css-selector": "^5.0",
-        "guzzlehttp/guzzle": "~6.0|^7.0.1"
+        "guzzlehttp/guzzle": "~6.0|^7.0.1",
+        "imangazaliev/didom": "^1.16",
+        "ext-dom": "*"
     },
     "require-dev": {
+        "roave/security-advisories": "dev-latest",
         "phpstan/phpstan": "^0.12.34",
         "phpunit/phpunit": "^9"
     },

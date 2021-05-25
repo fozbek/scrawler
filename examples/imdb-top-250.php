@@ -1,18 +1,20 @@
 <?php
 
+use Scrawler\Scrawler;
+
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
-$scrawler = new \Scrawler\Scrawler();
+$scrawler = new Scrawler();
 
 $url = 'https://www.imdb.com/chart/top/';
 
 $schema = [
     'movies' => [
-        'selector' => 'tbody.lister-list tr',
+        'list-selector' => 'tbody.lister-list tr',
         'content' => [
             'name' => '.titleColumn a',
             'link' => '.titleColumn a@href',
-            'rating' => '.ratingColumn'
+            'rating' => '.ratingColumn strong'
         ]
     ]
 ];

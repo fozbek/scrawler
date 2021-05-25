@@ -16,7 +16,7 @@ $url = 'https://google.com';
 $schema = [
     'title' => 'title',
     'a-tags' => [
-        'selector' => 'a',
+        'list-selector' => 'a',
         'content' => [
             'text' => 'a',
             'url' => 'a@href',
@@ -47,9 +47,9 @@ Response (Formatted)
     } 
     
 #### Examples
->You can test all of these in any xenforo forum. Example url: https://xenforo.com/community/forums/announcements/
+>You can test all of these in any site that uses xenforo. Example url: https://xenforo.com/community/forums/announcements/
 
-- Scrape single selector
+- Single selector
 ```php
 $schema = [
     'forum-title' => '.p-body-header .p-title-value' 
@@ -60,7 +60,7 @@ $schema = [
 ```php
 $schema = [
     'threads' => [
-        'selector' => '.structItem--thread',
+        'list-selector' => '.structItem--thread',
         'content' => [
             'thread-title' => '.structItem-title',
             'thread-url' => '.structItem-title a@href',
@@ -70,22 +70,12 @@ $schema = [
 ];
 ``` 
 
-- Pagination
-```php
-$schema = [
-    'title' => 'title',
-    'pagination' => [
-        'limit' => 3,
-        'selector' => '.pageNav-jump--next@href',
-    ],
-];
-```
-
 - New Request
 ```php
 $schema = [
     'login-page' => [
-        'selector' => 'a.p-navgroup-link--logIn@href',
+        'request-selector' => 'a.p-navgroup-link--logIn@href',
+        'base-url' => 'https://xenforo.com',
         'content' => [
             'title' => 'title',
         ],
@@ -98,19 +88,16 @@ $schema = [
 $schema = [
     'title' => 'title',
     'threads' => [
-        'selector' => '.structItem--thread',
+        'list-selector' => '.structItem--thread',
         'content' => [
             'thread-detail' => [
-                'selector' => '.structItem-title a@href',
+                'request-selector' => '.structItem-title a@href',
+                'base-url' => 'https://xenforo.com',
                 'content' => [
                     'thread-content' => '.message-body .bbWrapper',
                 ],
             ],
         ],
-    ],
-    'pagination' => [
-        'limit' => 3,
-        'selector' => '.pageNav-jump--next@href',
-    ],
+    ]
 ];
 ```

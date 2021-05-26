@@ -56,7 +56,18 @@ class Scrawler
             $depth = ScrawlerDocument::normalizeDepth($depth);
 
             if ($depth['selector']) { // handle single
-                $result[$key] = $depthModel->handleSingleSelector($depth);
+                if ($depth['content'] !== false) {
+                    $element = $depthModel->first($depth['selector']);
+
+                    $content = '<null>';
+                    if ($element !== null) {
+                        $content = $element->html();
+                    }
+
+                    $result[$key] = $this->loopSchema($content, $depth['content']);
+                } else {
+                    $result[$key] = $depthModel->handleSingleSelector($depth);
+                }
 
             } elseif ($depth['request-selector']) {
 

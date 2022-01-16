@@ -24,14 +24,79 @@ class ScrawlerDocument
      * @var Document
      */
     private Document $document;
+    private array $depth;
 
     /**
      * ScrawlerDocument constructor.
      * @param string $content
+     * @param $depth
      */
-    public function __construct(string $content)
+    public function __construct(string $content, $depth)
     {
         $this->document = new Document($content);
+        $this->depth = $this->normalizeDepth($depth);
+    }
+
+    public function isSingleSelector(): bool
+    {
+        return !empty($this->depth['selector']);
+    }
+
+    public function isRequestSelector(): bool
+    {
+        return !empty($this->depth['request-selector']);
+    }
+
+    public function isListSelector(): bool
+    {
+        return !empty($this->depth['list-selector']);
+    }
+
+    public function hasContent(): bool
+    {
+        return false !== $this->depth['content'];
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getContent()
+    {
+        return $this->depth['content'];
+    }
+
+    /**
+     * @return string
+     * @throws InvalidSelectorException
+     */
+    public function getHtml(): string
+    {
+        $element = $this->first();
+
+        $content = '<null>';
+        if ($element !== null) {
+            $content = $element->html();
+        }
+
+        return $content;
+    }
+
+    /**
+     * @return string
+     * @throws InvalidSelectorException
+     */
+    public function getUrl(): ?string
+    {
+        if ($this->depth['base-url']) {
+            return $this->buildUrl($this->first(), $this->depth['base-url']);
+        }
+
+        return $this->first();
+    }
+
+    public function getListSelector()
+    {
+        return $this->depth['list-selector'];
     }
 
     private function getDocument(): Document
@@ -52,43 +117,52 @@ class ScrawlerDocument
      * @throws InvalidSelectorException
      *
      */
-    public function first(string $expression)
+    public function first()
     {
-        return $this->getDocument()->first($expression);
+        $selector = 'list-selector';
+
+        if ($this->isSingleSelector()) {
+            $selector = 'selector';
+        }
+
+        if ($this->isRequestSelector()) {
+            $selector = 'request-selector';
+        }
+
+        return $this->getDocument()->first($this->depth[$selector]);
     }
 
     /**
      * @return Element[]
      * @throws InvalidSelectorException
      */
-    public function find(string $expression): array
+    public function getListContents(): array
     {
-        return $this->getDocument()->find($expression);
+        return $this->getDocument()->find($this->getListSelector());
     }
 
-    public function handleSingleSelector($depth): ?string
+    /**
+     * @throws InvalidSelectorException
+     */
+    public function handleSingleSelector(): ?string
     {
-        $depth = self::normalizeDepth($depth);
-
-        $element = $this->first($depth['selector']);
+        $element = $this->first();
 
         if ($element === null) {
             return null;
         }
 
-        return self::manipulateExistingDom($element, $depth);
+        return $this->manipulateExistingDom($element, $this->depth);
     }
 
-    public static function manipulateExistingDom($element, $depth)
+    public function manipulateExistingDom($element, $depth)
     {
         if ($depth['attr'] !== false) {
             return $element->attr($depth['attr']);
         }
 
-        if ($depth['how'] !== false) {
-            if ($depth['how'] === 'html') {
-                return $element->html();
-            }
+        if ($depth['how'] === 'html') {
+            return $element->html();
         }
 
         if ($depth['trim'] !== false) {
@@ -98,28 +172,42 @@ class ScrawlerDocument
         return $element->text();
     }
 
-    private static function _normalizeDepth($depth): array
+    private function getOptions($depth): array
     {
         return array_merge(self::defaultParameters, $depth);
     }
 
-    public static function normalizeDepth($depth): array
+    private function normalizeDepth($depth): array
     {
         if (is_string($depth)) {
             if (strpos($depth, '@') !== false) {
                 [$selector, $attr] = explode('@', $depth);
 
-                return self::_normalizeDepth([
+                return $this->getOptions([
                     'selector' => $selector,
                     'attr' => $attr,
                 ]);
             }
 
-            return self::_normalizeDepth([
+            return $this->getOptions([
                 'selector' => $depth,
             ]);
         }
 
-        return self::_normalizeDepth($depth);
+        return $this->getOptions($depth);
+    }
+
+    /**
+     * @param string $pathOrUrl
+     * @param string $baseUrl
+     * @return string
+     */
+    private function buildUrl(string $pathOrUrl, string $baseUrl): string
+    {
+        if ($baseUrl) {
+            return sprintf("%s/%s", rtrim($baseUrl, '/'), ltrim($pathOrUrl, '/')); // make a valid url
+        }
+
+        return $pathOrUrl;
     }
 }

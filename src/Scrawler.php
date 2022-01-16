@@ -18,7 +18,7 @@ class Scrawler
      */
     public function __construct(?ScrawlerOptions $options = null)
     {
-        if (!$options instanceof ScrawlerOptions) {
+        if (!is_a($options, ScrawlerOptions::class)) {
             $options = new ScrawlerOptions();
         }
 
@@ -52,44 +52,30 @@ class Scrawler
         $result = [];
 
         foreach ($schema as $key => $depth) {
-            $depthModel = new ScrawlerDocument($htmlContent);
-            $depth = ScrawlerDocument::normalizeDepth($depth);
+            $model = new ScrawlerDocument($htmlContent, $depth);
 
-            if ($depth['selector']) { // handle single
-                if ($depth['content'] !== false) {
-                    $element = $depthModel->first($depth['selector']);
-
-                    $content = '<null>';
-                    if ($element !== null) {
-                        $content = $element->html();
-                    }
-
-                    $result[$key] = $this->loopSchema($content, $depth['content']);
+            if ($model->isSingleSelector()) {
+                if ($model->hasContent()) {
+                    $result[$key] = $this->loopSchema($model->getHtml(), $model->getContent());
                 } else {
-                    $result[$key] = $depthModel->handleSingleSelector($depth);
+                    $result[$key] = $model->handleSingleSelector();
                 }
 
-            } elseif ($depth['request-selector']) {
-
-                $url = $depthModel->handleSingleSelector($depth['request-selector']);
-
-                if ($depth['base-url']) {
-                    $url = $this->makeValidUrl($url, $depth['base-url']);
-                }
-
-                $result[$key] = $this->scrape($url, $depth['content']);
-
+            } elseif ($model->isRequestSelector()) {
+                $result[$key] = $this->scrape($model->getUrl(), $model->getContent());
             } else {
-                $elements = $depthModel->find($depth['list-selector']);
+                $elements = $model->getListContents();
 
-                if ($depth['content'] === false) {
-                    $result[$key][] = array_map(static fn($element) => ScrawlerDocument::manipulateExistingDom($element, $depth), $elements);
+                if (false === $model->hasContent()) {
+                    $result[$key][] = array_map(static function ($element) use ($depth) {
+                        return (new ScrawlerDocument($element, $depth))->handleSingleSelector();
+                    }, $elements);
 
                     continue;
                 }
 
                 foreach ($elements as $element) {
-                    $result[$key][] = $this->loopSchema($element->html(), $depth['content']);
+                    $result[$key][] = $this->loopSchema($element->html(), $model->getContent());
                 }
             }
         }
@@ -121,19 +107,5 @@ class Scrawler
         }
 
         return $this->requestHelper;
-    }
-
-    /**
-     * @param string $pathOrUrl
-     * @param string $baseUrl
-     * @return string
-     */
-    public function makeValidUrl(string $pathOrUrl, string $baseUrl): string
-    {
-        if ($baseUrl) {
-            return sprintf("%s/%s", rtrim($baseUrl, '/'), ltrim($pathOrUrl, '/')); // make a valid url
-        }
-
-        return $pathOrUrl;
     }
 }

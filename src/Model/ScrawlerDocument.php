@@ -54,7 +54,7 @@ class ScrawlerDocument
 
     public function hasContent(): bool
     {
-        return false !== $this->depth['content'];
+        return !empty($this->depth['content']);
     }
 
     /**

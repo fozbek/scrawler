@@ -180,7 +180,7 @@ class ScrawlerDocument
     private function normalizeDepth($depth): array
     {
         if (is_string($depth)) {
-            if (strpos($depth, '@') !== false) {
+            if (str_contains($depth, '@')) {
                 [$selector, $attr] = explode('@', $depth);
 
                 return $this->getOptions([

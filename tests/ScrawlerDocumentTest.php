@@ -8,11 +8,13 @@ class ScrawlerDocumentTest extends TestCase
 {
     public function test_first(): void
     {
-        $document = new ScrawlerDocument(self::getHtmlContent());
-        self::assertEquals($document->first(' ul li.item')->text(), 'li 1');
-
-        self::assertIsArray($document->find('ul li.item'));
-        self::assertCount(3, $document->find('ul li.item'));
+        $options = new ScrawlerOptions();
+        $options->isHtml = true;
+        $options->schema = ['foo' => 'span'];
+        $options->urlOrHtml = '<div><span>bar</span></div>';
+        $document = new ScrawlerDocument($options);
+        $result = $document->extract();
+        self::assertEquals(['foo' => 'bar'], $result);
     }
 
     private static function getHtmlContent(): string

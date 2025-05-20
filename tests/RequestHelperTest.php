@@ -3,59 +3,58 @@
 namespace Scrawler;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\ConnectException;
 use PHPUnit\Framework\TestCase;
 
 class RequestHelperTest extends TestCase
 {
-    /**
-     * @var RequestHelper
-     */
-    private RequestHelper $helper;
-    /**
-     * @var RequestHelper
-     */
-    private RequestHelper $helperWithoutCustomClient;
-
-    protected function setUp(): void
+    public function testGETReturnsBodyOn200()
     {
         $mock = new MockHandler([
-            new Response(200, ['X-Foo' => 'Bar'], 'Hello, World'),
-            new Response(202, ['Content-Length' => 0]),
-            new RequestException('Error Communicating with Server', new Request('GET', 'test'))
+            new Response(200, [], 'Hello'),
         ]);
-
-        $handlerStack = HandlerStack::create($mock);
-        $client = new Client(['handler' => $handlerStack]);
-        $this->helper = new RequestHelper($client);
-
-        $this->helperWithoutCustomClient = new RequestHelper(new Client());
+        $client = new Client(['handler' => HandlerStack::create($mock)]);
+        $helper = new RequestHelper($client);
+        $this->assertEquals('Hello', $helper->GET('/'));
     }
 
-    /**
-     * @throws GuzzleException
-     */
-    public function testGET(): void
+    public function testGETReturnsEmptyOn202()
     {
-        $response = $this->helper->GET('/');
-        self::assertEquals('Hello, World', $response);
+        $mock = new MockHandler([
+            new Response(202, []),
+        ]);
+        $client = new Client(['handler' => HandlerStack::create($mock)]);
+        $helper = new RequestHelper($client);
+        $this->assertEmpty($helper->GET('/'));
+    }
 
-        $response = $this->helper->GET('/');
-        self::assertEmpty($response);
-
+    public function testGETThrowsOnError()
+    {
+        $mock = new MockHandler([
+            new RequestException('Error', new Request('GET', '/')),
+        ]);
+        $client = new Client(['handler' => HandlerStack::create($mock)]);
+        $helper = new RequestHelper($client);
         $this->expectException(RequestException::class);
-        $this->helper->GET('/');
+        $helper->GET('/');
+    }
 
-        $response = $this->helperWithoutCustomClient->GET('https://google.com/');
-        self::assertNotEmpty($response);
+    public function testGETRealRequest()
+    {
+        $helper = new RequestHelper(new Client());
+        $response = $helper->GET('https://httpbin.org/get');
+        $this->assertStringContainsString('httpbin', $response);
+    }
 
+    public function testGETThrowsOnInvalidHost()
+    {
+        $helper = new RequestHelper(new Client());
         $this->expectException(ConnectException::class);
-        $this->helperWithoutCustomClient->GET('someWrongHostname');
+        $helper->GET('http://nonexistent-host-12345');
     }
 }

@@ -26,6 +26,8 @@ class ScrawlerExtractor
                 $result[$key] = self::extractAttribute($context, $value);
             } elseif (self::isTextSelector($value)) {
                 $result[$key] = self::extractText($context, $value);
+            } elseif ($value === null) {
+                $result[$key] = self::extractCurrentText($context);
             } else {
                 $result[$key] = null;
             }
@@ -68,5 +70,10 @@ class ScrawlerExtractor
     {
         $el = $context->find($value)[0] ?? null;
         return $el ? trim($el->text()) : null;
+    }
+
+    private static function extractCurrentText($context)
+    {
+        return method_exists($context, 'text') ? trim($context->text()) : null;
     }
 }

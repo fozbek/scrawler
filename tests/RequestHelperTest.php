@@ -46,7 +46,11 @@ class RequestHelperTest extends TestCase
 
     public function testGETRealRequest()
     {
-        $helper = new RequestHelper(new Client());
+        $mock = new MockHandler([
+            new Response(200, [], '{"url": "https://httpbin.org/get"}'),
+        ]);
+        $client = new Client(['handler' => HandlerStack::create($mock)]);
+        $helper = new RequestHelper($client);
         $response = $helper->GET('https://httpbin.org/get');
         $this->assertStringContainsString('httpbin', $response);
     }

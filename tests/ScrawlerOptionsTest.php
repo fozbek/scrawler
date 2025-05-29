@@ -23,4 +23,13 @@ class ScrawlerOptionsTest extends TestCase
         $this->assertEquals(['foo' => 'bar'], $options->schema);
         $this->assertEquals('<html></html>', $options->urlOrHtml);
     }
+
+    public function testPartialOptions()
+    {
+        $options = new ScrawlerOptions();
+        $options->schema = ['foo' => 'bar'];
+        $this->assertFalse($options->isHtml);
+        $this->assertEquals(['foo' => 'bar'], $options->schema);
+        $this->assertEquals('', $options->urlOrHtml);
+    }
 }

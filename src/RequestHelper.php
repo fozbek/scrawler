@@ -44,6 +44,18 @@ class RequestHelper
     }
 
     /**
+     * @deprecated Use fetch() instead.
+     * @param string $url
+     * @return string
+     * @throws GuzzleException
+     * @throws Exception
+     */
+    public function GET(string $url): string
+    {
+        return $this->fetch($url);
+    }
+
+    /**
      * @return Client
      */
     private function getClient(): Client

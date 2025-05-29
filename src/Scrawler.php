@@ -19,12 +19,19 @@ class Scrawler
      * @param bool $isHtml If true, treat $urlOrHtml as HTML
      * @return array Extracted data
      */
-    public function scrape(string $urlOrHtml, array $schema, bool $isHtml = false): array
+    public function scrape(string $urlOrHtml, array $schema, bool $isHtml = false, ?Client $client = null): array
     {
         $options = new ScrawlerOptions();
-        $options->isHtml = $isHtml;
         $options->schema = $schema;
-        $options->urlOrHtml = $urlOrHtml;
+        if ($isHtml) {
+            $options->isHtml = true;
+            $options->urlOrHtml = $urlOrHtml;
+        } else {
+            $requestHelper = new \Scrawler\RequestHelper($client);
+            $options->isHtml = true;
+            $options->urlOrHtml = $requestHelper->fetch($urlOrHtml);
+        }
+
         return $this->loopSchema($options);
     }
 
@@ -37,6 +44,7 @@ class Scrawler
     public function loopSchema(ScrawlerOptions $options): array
     {
         $doc = new ScrawlerDocument($options);
+        
         return $doc->extract();
     }
 }

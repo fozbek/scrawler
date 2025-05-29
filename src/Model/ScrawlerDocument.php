@@ -3,7 +3,6 @@
 namespace Scrawler\Model;
 
 use DiDom\Document;
-use DiDom\Element;
 
 /**
  * Handles the extraction logic for Scrawler.

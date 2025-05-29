@@ -17,8 +17,12 @@ class RequestHelper
      * RequestHelper constructor.
      * @param Client $client
      */
-    public function __construct(Client $client)
+    public function __construct(?Client $client = null)
     {
+        if ($client === null) {
+            $client = new Client();
+        }
+
         $this->client = $client;
     }
 
@@ -28,19 +32,15 @@ class RequestHelper
      * @throws GuzzleException
      * @throws Exception
      */
-    public function GET(string $url): string
+    public function fetch(string $url): string
     {
-        try {
-            $response = $this->getClient()->request('GET', $url, [
-                'headers' => [
-                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
-                ]
-            ]);
+        $response = $this->getClient()->request('GET', $url, [
+            'headers' => [
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
+            ]
+        ]);
 
-            return $response->getBody()->getContents();
-        } catch (Exception $e) {
-            throw $e;
-        }
+        return $response->getBody()->getContents();
     }
 
     /**

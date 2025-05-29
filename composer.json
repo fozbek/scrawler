@@ -14,9 +14,9 @@
         }
     },
     "require": {
-        "php": "~8.1",
+        "php": "^8.1",
         "guzzlehttp/guzzle": "~6.0|^7.0.1",
-        "imangazaliev/didom": "^1.16",
+        "imangazaliev/didom": "^2.0",
         "ext-dom": "*"
     },
     "require-dev": {

@@ -2,41 +2,23 @@
 
 namespace Scrawler\Model;
 
-use GuzzleHttp\Client;
-
+/**
+ * Options for Scrawler scraping process.
+ */
 class ScrawlerOptions
 {
     /**
-     * @var Client
+     * @var bool Whether the input is HTML (true) or a URL (false)
      */
-    private $guzzleClient;
+    public bool $isHtml = false;
 
     /**
-     * ScrawlerOptions constructor.
+     * @var array The extraction schema
      */
-    public function __construct(Client $client = null)
-    {
-        if (null !== $client) {
-            $this->setGuzzleClient($client);
-        }
-    }
+    public array $schema = [];
 
     /**
-     * @return Client
+     * @var string The URL or HTML string to scrape
      */
-    public function getGuzzleClient()
-    {
-        return $this->guzzleClient;
-    }
-
-    /**
-     * @param Client $client
-     * @return ScrawlerOptions
-     */
-    public function setGuzzleClient(Client $client): ScrawlerOptions
-    {
-        $this->guzzleClient = $client;
-
-        return $this;
-    }
+    public string $urlOrHtml = '';
 }

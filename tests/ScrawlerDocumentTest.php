@@ -8,30 +8,45 @@ class ScrawlerDocumentTest extends TestCase
 {
     public function test_first(): void
     {
-        $document = new ScrawlerDocument(self::getHtmlContent());
-        self::assertEquals($document->first(' ul li.item')->text(), 'li 1');
-
-        self::assertIsArray($document->find('ul li.item'));
-        self::assertCount(3, $document->find('ul li.item'));
+        $options = new ScrawlerOptions();
+        $options->isHtml = true;
+        $options->schema = ['foo' => 'span'];
+        $options->urlOrHtml = '<div><span>bar</span></div>';
+        $document = new ScrawlerDocument($options);
+        $result = $document->extract();
+        self::assertEquals(['foo' => 'bar'], $result);
     }
 
-    private static function getHtmlContent(): string
+    public function test_empty_schema(): void
     {
-        return <<<EOT
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-    <ul>
-        <li class="item">li 1</li>
-        <li class="item">li 2</li>
-        <li class="item">li 3</li>
-    </ul>
-</body>
-</html>        
-EOT;
+        $options = new ScrawlerOptions();
+        $options->isHtml = true;
+        $options->schema = [];
+        $options->urlOrHtml = '<div><span>bar</span></div>';
+        $document = new ScrawlerDocument($options);
+        $result = $document->extract();
+        self::assertEquals([], $result);
+    }
+
+    public function test_malformed_html(): void
+    {
+        $options = new ScrawlerOptions();
+        $options->isHtml = true;
+        $options->schema = ['foo' => 'span'];
+        $options->urlOrHtml = '<div><span>bar'; // malformed
+        $document = new ScrawlerDocument($options);
+        $result = $document->extract();
+        self::assertEquals(['foo' => 'bar'], $result);
+    }
+
+    public function test_null_value_schema(): void
+    {
+        $options = new ScrawlerOptions();
+        $options->isHtml = true;
+        $options->schema = ['foo' => null];
+        $options->urlOrHtml = '<div>baz</div>';
+        $document = new ScrawlerDocument($options);
+        $result = $document->extract();
+        self::assertEquals(['foo' => 'baz'], $result);
     }
 }
